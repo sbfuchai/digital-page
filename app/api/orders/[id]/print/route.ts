@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import db from "@/lib/db";
+import { updateOrderStatus, initDB } from "@/lib/db";
 
 export async function POST(
   request: Request,
@@ -7,14 +7,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    
-    const stmt = db.prepare("UPDATE orders SET status = ? WHERE orderId = ?");
-    const result = stmt.run("printed", id);
-
-    if (result.changes === 0) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
-    }
-
+    await initDB();
+    await updateOrderStatus(id, "printed");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update order:", error);

@@ -1,63 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import db from "@/lib/db";
-
-const UPLOADS_DIR = path.join(process.cwd(), "data", "uploads");
-
-// Generate random order ID
-function generateOrderId(): string {
-  return Math.random().toString(36).substring(2, 10).toUpperCase();
-}
+import { put } from "@vercel/blob";
+import { createOrder, initDB } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
+    // Initialize DB (creates tables if not exist)
+    await initDB();
+    
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
     
-    // Ensure uploads directory exists
-    await mkdir(UPLOADS_DIR, { recursive: true });
-    
-    const orderId = generateOrderId();
-    const orderDir = path.join(UPLOADS_DIR, orderId);
-    await mkdir(orderDir, { recursive: true });
-
+    // Upload files to Vercel Blob
     const fileNames: string[] = [];
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const filePath = path.join(orderDir, file.name);
-      await writeFile(filePath, buffer);
-      fileNames.push(file.name);
+      const blob = await put(file.name, bytes, {
+        access: "public",
+      });
+      fileNames.push(blob.url); // Store the blob URL
     }
 
-    // Insert into SQLite
-    const stmt = db.prepare(`
-      INSERT INTO orders (orderId, name, email, phone, copies, color, notes, files, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    stmt.run(
-      orderId,
-      formData.get("name") as string,
-      formData.get("email") as string,
-      (formData.get("phone") as string) || null,
-      (formData.get("copies") as string) || "1",
-      (formData.get("color") as string) || "bw",
-      (formData.get("notes") as string) || null,
-      JSON.stringify(fileNames),
-      "pending"
-    );
+    // Create order in database
+    const order = await createOrder({
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      phone: (formData.get("phone") as string) || undefined,
+      copies: (formData.get("copies") as string) || "1",
+      color: (formData.get("color") as string) || "bw",
+      notes: (formData.get("notes") as string) || undefined,
+      files: fileNames,
+    });
 
     return NextResponse.json({
       success: true,
-      orderId: orderId,
+      orderId: order.orderId,
     });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      { success: false, message: "Upload failed" },
+      { success: false, message: "Upload failed: " + (error as Error).message },
       { status: 500 }
     );
   }

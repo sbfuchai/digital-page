@@ -370,17 +370,23 @@ export default function OwnerDashboard() {
                       
                       <div className="space-y-2">
                         {order.files.map((file, idx) => (
-                          <div
+                          <a
                             key={idx}
-                            className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-200"
+                            href={file.startsWith('http') ? file : '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-200 hover:bg-stone-100 transition-colors"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
                                 <FileText className="w-4 h-4 text-orange-500" />
                               </div>
-                              <span className="text-sm text-stone-700 truncate">{file}</span>
+                              <span className="text-sm text-stone-700 truncate">
+                                {file.startsWith('http') ? `File ${idx + 1}` : file}
+                              </span>
                             </div>
-                          </div>
+                            <span className="text-xs text-stone-400">Open →</span>
+                          </a>
                         ))}
                       </div>
 
