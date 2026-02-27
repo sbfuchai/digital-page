@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
-      const blob = await put(file.name, bytes, {});
+      const blob = await put(file.name, bytes, { access: 'private' });
       fileUrls.push(blob.url);
     }
 
