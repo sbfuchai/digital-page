@@ -17,14 +17,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Upload files to Vercel Blob
+    // Upload files to Vercel Blob (private store)
     const fileUrls: string[] = [];
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
-      const blob = await put(file.name, bytes, {
-        access: "public",
-      });
+      const blob = await put(file.name, bytes);
       fileUrls.push(blob.url);
     }
 
