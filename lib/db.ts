@@ -1,9 +1,9 @@
 import { sql } from '@vercel/postgres';
-import { v4 as uuidv4 } from 'uuid';
 
-// Initialize tables on first run
+// Initialize database tables
 export async function initDB() {
   try {
+    // Create orders table
     await sql`
       CREATE TABLE IF NOT EXISTS orders (
         id SERIAL PRIMARY KEY,
@@ -20,6 +20,7 @@ export async function initDB() {
       )
     `;
     
+    // Create bookings table
     await sql`
       CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
@@ -35,11 +36,15 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
+    
+    return { success: true };
   } catch (error) {
-    console.error('DB Init error:', error);
+    console.error('Database initialization error:', error);
+    throw error;
   }
 }
 
+// Create a new order
 export async function createOrder(data: {
   name: string;
   email: string;
@@ -61,6 +66,7 @@ export async function createOrder(data: {
   return { orderId };
 }
 
+// Get all orders
 export async function getOrders() {
   const result = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
   return result.rows.map(row => ({
@@ -69,10 +75,12 @@ export async function getOrders() {
   }));
 }
 
+// Update order status
 export async function updateOrderStatus(orderId: string, status: string) {
   await sql`UPDATE orders SET status = ${status} WHERE order_id = ${orderId}`;
 }
 
+// Create a new booking
 export async function createBooking(data: {
   name: string;
   phone: string;
@@ -93,6 +101,7 @@ export async function createBooking(data: {
   return { bookingId };
 }
 
+// Get all bookings
 export async function getBookings() {
   const result = await sql`SELECT * FROM bookings ORDER BY created_at DESC`;
   return result.rows;

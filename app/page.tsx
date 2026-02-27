@@ -25,8 +25,11 @@ export default function Home() {
     notes: "",
   });
 
+  const [uploadError, setUploadError] = useState("");
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles((prev) => [...prev, ...acceptedFiles]);
+    setUploadError("");
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -46,9 +49,13 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (files.length === 0) return;
+    if (files.length === 0) {
+      setUploadError("Please select at least one file to upload");
+      return;
+    }
 
     setUploading(true);
+    setUploadError("");
     
     const data = new FormData();
     files.forEach((file) => data.append("files", file));
@@ -69,9 +76,12 @@ export default function Home() {
       if (result.success) {
         setOrderId(result.orderId || "");
         setUploaded(true);
+      } else {
+        setUploadError(result.message || "Upload failed. Please try again.");
       }
     } catch (error) {
       console.error("Upload failed:", error);
+      setUploadError("Network error. Please check your connection and try again.");
     } finally {
       setUploading(false);
     }
@@ -400,6 +410,16 @@ export default function Home() {
                 />
               </div>
             </div>
+
+            {/* Error Message */}
+            {uploadError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-red-600 text-sm">!</span>
+                </div>
+                <p className="text-red-700 text-sm">{uploadError}</p>
+              </div>
+            )}
 
             {/* Submit */}
             <button
